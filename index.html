@@ -1,22 +1,179 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>MLS 113 Quiz - OlamGeorg</title>
-  <style>
-    *{margin:0;padding:0;box-sizing:border-box}
-    body{font-family:system-ui,-apple-system,sans-serif;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);min-height:100vh;padding:15px;color:#fff;transition:background 0.3s}
-    .container{max-width:700px;margin:0 auto;background:rgba(255,255,255,0.12);backdrop-filter:blur(12px);border-radius:24px;padding:25px;box-shadow:0 8px 32px rgba(0,0,0,0.2)}
-    h1{font-size:26px;margin-bottom:15px;text-align:center;font-weight:700}
-    .mode-toggle{display:flex;gap:10px;margin-bottom:20px}
-    .mode-toggle button{flex:1;padding:14px;font-size:16px;border:2px solid rgba(255,255,255,0.3);border-radius:12px;background:transparent;color:#fff;font-weight:600;cursor:pointer}
-    .mode-toggle button.active{background:#fff;color:#667eea;border-color:#fff}
-    .progress{height:10px;background:rgba(255,255,255,0.2);border-radius:10px;margin:20px 0;overflow:hidden}
-    .progress-bar{height:100%;background:linear-gradient(90deg,#ffd700,#ffed4e);transition:width 0.3s;border-radius:10px}
-    .q-count{font-size:16px;opacity:0.9;margin-bottom:10px}
-    input[type="color"]{width:100%;height:45px;border:none;border-radius:12px;margin:15px 0;cursor:pointer}
-    .question{font-size:20px;margin:25px 0;font-weight:600;line-height:1.4}
-    .option{padding:18px;background:rgba(255,255,255,0.15);margin:12px 0;border-radius:14px;cursor:pointer;font-size:18px;transition:all 0.2s;border:2px solid transparent}
-    .option:active{transform:scale(0.98);}
-  .option.selected{background:#667eea;border-color:#667eea;}
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pathology Quiz - 113 Questions</title>
+<style>
+* {box-sizing: border-box; margin: 0; padding: 0;}
+body {
+  font-family: 'Segoe UI', Arial, sans-serif;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.container {
+  max-width: 800px;
+  width: 100%;
+  background: white;
+  padding: 40px;
+  border-radius: 15px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+}
+h1 {
+  text-align: center;
+  color: #667eea;
+  margin-bottom: 10px;
+  font-size: 28px;
+}
+.subtitle {
+  text-align: center;
+  color: #888;
+  margin-bottom: 30px;
+  font-size: 14px;
+}
+.progress {
+  text-align: center;
+  color: #999;
+  margin-bottom: 20px;
+  font-size: 14px;
+}
+.question {
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 25px;
+  color: #333;
+  line-height: 1.5;
+}
+.options {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 25px;
+}
+.option {
+  padding: 16px 20px;
+  border: 2px solid #e0e0e0;
+  border-radius: 10px;
+  cursor: pointer;
+  background: white;
+  transition: all 0.2s;
+  font-size: 16px;
+}
+.option:hover {
+  background: #f8f9ff;
+  border-color: #667eea;
+  transform: translateX(5px);
+}
+.option:active {
+  transform: scale(0.98);
+}
+.option.selected {
+  background: #667eea;
+  border-color: #667eea;
+  color: white;
+  font-weight: bold;
+}
+.btn {
+  background: #667eea;
+  color: white;
+  border: none;
+  padding: 14px 40px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: bold;
+  width: 100%;
+  transition: 0.2s;
+}
+.btn:hover:not(:disabled) {
+  background: #5568d3;
+  transform: translateY(-2px);
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.score {
+  font-size: 24px;
+  text-align: center;
+  margin-top: 25px;
+  font-weight: bold;
+  color: #667eea;
+}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>Pathology Quiz</h1>
+<p class="subtitle">113 Questions - Test Your Knowledge</p>
+<div id="quiz">
+<div class="progress" id="progress">Question 1 of 113</div>
+<div class="question" id="question">Loading...</div>
+<div class="options" id="options"></div>
+<button class="btn" id="nextBtn" disabled>Next Question</button>
+<div class="score" id="score"></div>
+</div>
+</div>
+
+<script type="module">
+import { quizData } from './questions.js';
+
+let currentQ = 0;
+let score = 0;
+let selected = null;
+
+const questionEl = document.getElementById('question');
+const optionsEl = document.getElementById('options');
+const nextBtn = document.getElementById('nextBtn');
+const scoreEl = document.getElementById('score');
+const progressEl = document.getElementById('progress');
+
+function loadQuestion() {
+  selected = null;
+  nextBtn.disabled = true;
+  const q = quizData[currentQ];
+  progressEl.textContent = `Question ${currentQ+1} of ${quizData.length}`;
+  questionEl.textContent = q.question;
+  optionsEl.innerHTML = '';
+  q.options.forEach((opt, i) => {
+    const div = document.createElement('div');
+    div.className = 'option';
+    div.textContent = `${String.fromCharCode(65+i)}. ${opt}`;
+    div.onclick = () => selectOption(div, i);
+    optionsEl.appendChild(div);
+  });
+}
+
+function selectOption(el, i) {
+  document.querySelectorAll('.option').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  selected = i;
+  nextBtn.disabled = false;
+}
+
+nextBtn.onclick = () => {
+  if(selected === quizData[currentQ].answer) score++;
+  currentQ++;
+  if(currentQ < quizData.length) {
+    loadQuestion();
+  } else {
+    showScore();
+  }
+};
+
+function showScore() {
+  questionEl.textContent = 'Quiz Complete! 🎉';
+  optionsEl.innerHTML = '';
+  nextBtn.style.display = 'none';
+  progressEl.textContent = 'Final Result';
+  const percent = Math.round((score/quizData.length)*100);
+  scoreEl.innerHTML = `Your Score: ${score}/${quizData.length}<br><span style="font-size:18px;color:#666">${percent}%</span>`;
+}
+
+loadQuestion();
+</script>
+</body>
+</html>
